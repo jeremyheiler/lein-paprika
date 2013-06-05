@@ -49,6 +49,7 @@ It is recommended that you add the `:paprika` key to your `project.clj` or a pro
            :client-secret "YOUR CLIENT SECRET"
            :host "http://localhost"
            :port 3000}}
+```
 
 Then you can omit the parameters from the command.
 
