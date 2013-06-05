@@ -1,40 +1,47 @@
 # lein-paprika
 
-A Leiningen plugin for launching an App.net-authenticated REPL.
+A Leiningen plugin for launching an App.net-authenticated Clojure REPL. As the name suggests, this project depends on [Paprika](https://github.com/literally/paprika) for interacting with App.net.
 
-## Installation
+## Usage
+
+This plugin is available on [Clojars](https://clojars.org/com.literallysoftware/lein-paprika). Add the following to your `:plugins` vector in either your `project.clj` or a profile.
 
 ```clojure
 [com.literallysoftware/lein-paprika "0.0.1"]
 ```
 
-## Usage
+You are required to add a `:paprika` key to your `project.clj` or profile with the credentials for [your app](https://account.app.net/developer/apps/).
 
-This plugin can be used standalone or from within a project.
+* `:client-id` - This is the Client ID created for your app.
+
+* `:client-secret` - This is the Client Secret created for your app.
+
+You may optionally provided a `:host` and a `:port` for the Callback URL.
 
 ### Standalone
 
-Add the plugin to a profile in your `~/profiles.clj` file. For brevity, the example will show it being added to the default `:user` profile.
+This plugin can be used outside the context of a project. In order to use it, you must add the plugin to a profile in your `~/profiles.clj` file. Unless you have a reason not to, it is recommended to add the plugin and its configuration to the default `:user` profile.
 
-```clojure
-{:user {:plugins [com.literallysoftware/lein-paprika "0.0.1"]
-        :paprika {:client-id <YOUR CLIENT ID>
-                  :client-secret <YOUR SECRET>}}}
-```
-
-Then for any directory you can launch a REPL like so:
+Then from any directory you can launch a REPL with the following subcommand.
 
 ```
 lein paprika repl
+
+;; with profile "foo"
+lein with-profile foo paprika repl
 ```
 
-Once the REPL has launched, the default namespace will contain a `user` var that points to the map recieved from App.net once properly authenticated. Print it with:
+Once the REPL has launched, the default namespace will contain a `user` var that points to the map recieved from App.net once properly authenticated.
 
 ```clojure
+;; To pretty print the whole thing
 (clojure.pprint/pprint user)
+
+;; To obtain your access token
+(:access-token user)
 ```
 
-If you just want to see that information with out launching a REPL:
+If you just want to see that information with out launching a REPL, you can use the `auth` subcommand.
 
 ```
 lein paprika auth
