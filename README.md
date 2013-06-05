@@ -4,19 +4,19 @@ A Leiningen plugin for launching an App.net-authenticated Clojure REPL. As the n
 
 ## Usage
 
-This plugin is available on [Clojars](https://clojars.org/com.literallysoftware/lein-paprika). Add the following to your `:plugins` vector in either your `project.clj` or a profile.
+This plugin is available on [Clojars](https://clojars.org/com.literallysoftware/lein-paprika). Add the following to the `:plugins` vector in either your `project.clj` or a profile.
 
 ```clojure
 [com.literallysoftware/lein-paprika "0.0.1"]
 ```
 
-You are required to add a `:paprika` key to your `project.clj` or profile with the credentials for [your app](https://account.app.net/developer/apps/).
+Use the following command to launch a REPL that authenticates you with one of your [App.net apps](https://account.app.net/developer/apps/).
 
-* `:client-id` - This is the Client ID created for your app.
+```
+lein paprika repl :client-id "YOUR CLIENT ID" :client-secret "YOUR CLIENT SECRET"
+```
 
-* `:client-secret` - This is the Client Secret created for your app.
-
-You may optionally provided a `:host` and a `:port` for the Callback URL.
+However, it is recommended that you add the `:paprika` key to your `project.clj` or a profile with both the `:client-id` and `:client-secret` keys. You may optionally provided a `:host` and `:port` key for the Callback URL. Their default values are "localhost" and "8000", respectively.
 
 ### Standalone
 
@@ -27,11 +27,11 @@ Then from any directory you can launch a REPL with the following subcommand.
 ```
 lein paprika repl
 
-;; with profile "foo"
+;; with the "foo" profile
 lein with-profile foo paprika repl
 ```
 
-Once the REPL has launched, the default namespace will contain a `user` var that points to the map recieved from App.net once properly authenticated.
+Once the REPL has launched, you can access your information from `user`.
 
 ```clojure
 ;; To pretty print the whole thing
@@ -39,6 +39,10 @@ Once the REPL has launched, the default namespace will contain a `user` var that
 
 ;; To obtain your access token
 (:access-token user)
+
+;; To create a post
+(require 'paprika.core)
+(paprika.core/create-post {:text "I'm posting this from my #clojure repl!"} (:access-token user))
 ```
 
 If you just want to see that information with out launching a REPL, you can use the `auth` subcommand.
