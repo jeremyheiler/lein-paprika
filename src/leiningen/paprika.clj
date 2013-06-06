@@ -1,11 +1,15 @@
 (ns leiningen.paprika
-  (:require [paprika.auth :as auth]
+  (:require [clojure.edn :as edn]
+            [clojure.java.browse :as b]
+            [clojure.pprint :as p]
+            [leiningen.core.project :as project]
+            [leiningen.core.user :as user]
+            [leiningen.repl :as repl]
+            [paprika.auth :as auth]
             [paprika.http :as http]
             [ring.adapter.jetty :as jetty]
-            [ring.middleware.params :refer [wrap-params]]
-            [clojure.java.browse :as browse :refer [browse-url]]
-            [leiningen.core.project :as project]
-            [leiningen.repl :as repl]))
+            [ring.middleware.params :refer [wrap-params]])
+  (:import [java.io File]))
 
 (defn response-handler
   [{:keys [r-status r-body]}]
@@ -27,47 +31,60 @@
 
 (defn authenticate
   [args]
-  (println "HERE")
-  (clojure.pprint/pprint args)
   (let [args (merge {:host "http://localhost" :port 8000 :scope []} args)
         args (assoc args :redirect-uri (str (:host args) ":" (:port args)))
         token-p (promise)
         handler (wrap-params (wrap-auth response-handler args token-p))
         server (jetty/run-jetty handler {:port (:port args) :join? false})]
-    (browse-url (auth/generate-server-auth-url args))
+    (b/browse-url (auth/generate-server-auth-url args))
     (let [result @token-p]
       (Thread/sleep 1000)
       (.stop server)
       result)))
 
+(defn cache-user
+  [opts user]
+  (if-let [file-path (:cache-file-path opts)]
+    (spit file-path (prn-str user))
+    (println "WARNING: Missing :cache-file-path")))
+
+(defn auth-command
+  [project opts user]
+  (p/pprint user))
+
+(defn paprika-repl-profile
+  [project user]
+  {:paprika-repl {:injections [`(def ~(symbol "user") ~user)]}})
+
+(defn repl-command
+  [project opts user]
+  (let [project (-> project
+                    (project/project-with-profiles-meta
+                      (paprika-repl-profile opts user))
+                    (project/set-profiles [:paprika-repl]))]
+    (repl/repl project)))
+
+(def commands
+  {:auth auth-command
+   :repl repl-command})
+
 (defn normalize-opts
   [opts]
   (http/transform-keys #(keyword (subs % 1)) (apply hash-map opts)))
 
-(defn authenticate-command
-  [project opts]
-  (clojure.pprint/pprint (authenticate (merge (:paprika project) opts))))
-
-(defn paprika-repl
-  [project]
-  {:paprika-repl {:injections [`(def ~(symbol "user")
-                                  (authenticate ~(:paprika project)))]}})
-
-(defn repl-command
-  [project opts]
-  (let [project (-> project
-                    (project/project-with-profiles-meta (paprika-repl project))
-                    (project/set-profiles [:paprika-repl]))]
-    (clojure.pprint/pprint project)
-    (repl/repl project)))
-
-(def commands
-  {:authenticate authenticate-command
-   :auth authenticate-command
-   :repl repl-command})
-
 (defn ^:no-project-needed paprika
   [project & args]
   (if-let [f (get commands (keyword (first args)))]
-    (f project (normalize-opts (rest args)))
+    (let [file-path (if-let [root (:root project)]
+                      (str root "/.paprika-token")
+                      (str (user/leiningen-home) "/paprika-token"))
+          opts (merge (:paprika project)
+                      {:cache-file-path file-path}
+                      (normalize-opts (rest args)))
+          user (if (.exists (File. file-path))
+                 (edn/read-string (slurp file-path))
+                 (let [user (authenticate opts)]
+                   (cache-user opts user)
+                   user))]
+      (f project opts user))
     (println "Unknown Paprika Command: " (first args))))
