@@ -9,7 +9,7 @@ An [App.net Developer account](https://join.app.net/signup?plan=developer) is re
 This plugin is available on [Clojars](https://clojars.org/com.literallysoftware/lein-paprika). Add the following to the `:plugins` vector in either your `project.clj` or a profile.
 
 ```clojure
-[com.literallysoftware/lein-paprika "0.0.1"]
+[com.literallysoftware/lein-paprika "0.0.2"]
 ```
 
 You do not need a project in order to use this plugin.
