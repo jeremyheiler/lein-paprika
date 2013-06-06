@@ -1,4 +1,4 @@
-(defproject com.literallysoftware/lein-paprika "0.0.2-SNAPSHOT"
+(defproject com.literallysoftware/lein-paprika "0.0.2"
   :description "A Leiningen plugin for Paprika, an App.net library."
   :url "https://github.com/literally/lein-paprika"
   :license {:name "Eclipse Public License"
